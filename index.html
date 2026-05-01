@@ -268,6 +268,18 @@
   }
   .thanks.show { display: block; animation: fadeIn 0.4s ease-out; }
 
+  .signup-error {
+    display: none;
+    color: var(--tomato);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-top: 0.8rem;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .signup-error.show { display: block; animation: fadeIn 0.3s ease-out; }
+
   /* ========== BOOKS TEASER ========== */
   .books-section {
     margin-top: 6rem;
@@ -481,6 +493,8 @@
 
     <p class="signup-note">No spam, ever. Just stories from the fridge.</p>
 
+    <p class="signup-error" id="signup-error" role="alert"></p>
+
     <div class="thanks" id="thanks">
       <strong>You're in! 🥦</strong><br>
       Welcome to the fridge. We'll be in touch soon.
@@ -530,19 +544,39 @@
 </main>
 
 <script>
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const form = document.getElementById('signup-form');
     const thanks = document.getElementById('thanks');
+    const errorEl = document.getElementById('signup-error');
+    const button = form.querySelector('button');
     const email = form.email.value;
 
-    // TODO: wire this up to a real email service (Mailchimp, ConvertKit, Buttondown, Formspree, etc.)
-    // For now, just show the success state.
-    console.log('Email captured:', email);
+    errorEl.classList.remove('show');
+    errorEl.textContent = '';
 
-    form.style.display = 'none';
-    document.querySelector('.signup-note').style.display = 'none';
-    thanks.classList.add('show');
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Joining...';
+
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) throw new Error('Request failed');
+
+      form.style.display = 'none';
+      document.querySelector('.signup-note').style.display = 'none';
+      thanks.classList.add('show');
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = originalLabel;
+      errorEl.textContent = 'Something went wrong — please try again.';
+      errorEl.classList.add('show');
+    }
   }
 </script>
 
